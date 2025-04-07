@@ -6,7 +6,7 @@ A TypeScript implementation of a Model Context Protocol server that facilitates 
 
 ```
 mcp-v2/
-├── build/             # Compiled JavaScript files
+├── build/             # Compiled JavaScript files (git-ignored)
 ├── src/               # TypeScript source files
 │   ├── index.ts       # Server entry point
 │   ├── handler.ts     # Request handlers implementation
@@ -14,6 +14,7 @@ mcp-v2/
 │   ├── resources.ts   # Resource definitions
 │   ├── resource-templates.ts # Resource template definitions
 │   └── prompts.ts     # Prompt definitions
+├── node_modules/      # Dependencies (git-ignored)
 ├── package.json       # Project dependencies and scripts
 ├── tsconfig.json      # TypeScript configuration
 └── startup.sh         # Script to clean, build, and start the server
