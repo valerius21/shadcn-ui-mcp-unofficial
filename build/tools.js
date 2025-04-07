@@ -1,7 +1,16 @@
+/**
+ * Tools implementation for the Model Context Protocol (MCP) server.
+ *
+ * This file defines the tools that can be called by the AI model through the MCP protocol.
+ * Each tool has a schema that defines its parameters and a handler function that implements its logic.
+ */
 // Allowed values
 const messageTypes = ['greeting', 'farewell', 'thank-you'];
 const tones = ['formal', 'casual', 'playful'];
-// tool definitions
+/**
+ * Tool definitions exported to the MCP handler
+ * Each tool must have a name, description, and inputSchema
+ */
 export const tools = {
     'create-message': {
         name: 'create-message',
@@ -28,7 +37,10 @@ export const tools = {
         },
     },
 };
-// Simple templates for the various message combinations
+/**
+ * Message template functions organized by message type and tone
+ * These functions generate the actual content returned by the create-message tool
+ */
 const messageFns = {
     greeting: {
         formal: (recipient) => `Dear ${recipient}, I hope this message finds you well`,
@@ -46,6 +58,12 @@ const messageFns = {
         casual: (recipient) => `Thanks so much, ${recipient}! Really appreciate it!`,
     },
 };
+/**
+ * Implementation of the create-message tool
+ * This function validates the input parameters and returns the appropriate message
+ * @param args - The parameters for creating a message
+ * @returns An object containing the generated message
+ */
 const createMessage = (args) => {
     if (!args.messageType)
         throw new Error("Must provide a message type.");
@@ -69,6 +87,11 @@ const createMessage = (args) => {
         ],
     };
 };
+/**
+ * Map of tool names to their handler functions
+ * This object is exported and used by the handler.ts file to call the appropriate
+ * function when a tool is invoked
+ */
 export const toolHandlers = {
     "create-message": createMessage,
 };
