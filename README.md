@@ -348,8 +348,8 @@ The MCP Inspector helps you debug your server. When you run the server with `npm
 
 ## Additional Resources
 
-- [Model Context Protocol Documentation](https://github.com/model-context-protocol/model-context-protocol)
-- [MCP SDK Documentation](https://github.com/model-context-protocol/mcp-js)
+- [Model Context Protocol Documentation](https://modelcontextprotocol.io/introduction)
+- [MCP Typescript SDK](https://github.com/modelcontextprotocol/typescript-sdk?tab=readme-ov-file)
 - [Building MCP Servers](https://medium.com/@cstroliadavis/building-mcp-servers-f9ce29814f1f) by Craig Strolia-Davis
 
 ## Credits
