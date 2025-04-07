@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"npm run clean && npm run build && npx @modelcontextprotocol/inspector node build/index.js",
+    "start":"npx @modelcontextprotocol/inspector node build/index.js",
     "clean": "rm -rf build"
   },
   "keywords": [],

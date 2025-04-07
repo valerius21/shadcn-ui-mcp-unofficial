@@ -1,72 +1,67 @@
 import {
+  CallToolRequestSchema,
   ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
   ListResourceTemplatesRequestSchema,
+  ReadResourceRequestSchema,
+  ListToolsRequestSchema,
+  GetPromptRequestSchema,
+  ListPromptsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { type Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { resourceHandlers, resources } from "./resources.js";
+import { promptHandlers, prompts } from "./prompts.js";
+import { toolHandlers, tools } from "./tools.js";
+import {
+  getResourceTemplate,
+  resourceTemplates,
+} from "./resource-templates.js";
 
 export const setupHandlers = (server: Server): void => {
   // List available resources when clients request them
-  server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({
-    resourceTemplates: [
-      {
-        greetings: {
-          uriTemplate: 'greetings://{name}',
-          name: 'Personal Greeting',
-          description: 'A personalized greeting message',
-          mimeType: 'text/plain',
-        },
-      },
-    ],
+  server.setRequestHandler(
+    ListResourcesRequestSchema,
+    () => ({ resources }),
+  );
+  // Resource Templates
+  server.setRequestHandler(ListResourceTemplatesRequestSchema, () => ({
+    resourceTemplates,
   }));
 
-  server.setRequestHandler(ListResourcesRequestSchema, async () => {
-    return {
-      resources: [
-        {
-          uri: "hello://world",
-          name: "Hello World Message",
-          description: "A simple greeting message",
-          mimeType: "text/plain",
-        },
-      ],
-    };
-  });
-
+    // tools 
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: Object.values(tools),
+    }));
+  
   // Return resource content when clients request it
-  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    if (request.params.uri === "hello://world") {
-      return {
-        contents: [
-          {
-            uri: "hello://world",
-            text: "Hello, World! This is my first MCP resource.",
-          },
-        ],
-      };
-    }
+  server.setRequestHandler(ReadResourceRequestSchema, (request) => {
+    const { uri } = request.params ?? {};
+    const resourceHandler =
+      resourceHandlers[uri as keyof typeof resourceHandlers];
+    if (resourceHandler) return resourceHandler();
+    const resourceTemplateHandler = getResourceTemplate(uri);
+    if (resourceTemplateHandler) return resourceTemplateHandler();
     throw new Error("Resource not found");
   });
 
-  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  // ... Existing content handler code
+  server.setRequestHandler(ListPromptsRequestSchema, () => ({
+    prompts: Object.values(prompts),
+  }));
 
-  // Template-based resource code
-  const greetingExp = /^greetings:\/\/(.+)$/;
-  const greetingMatch = request.params.uri.match(greetingExp);
-  if (greetingMatch) {
-    const name = decodeURIComponent(greetingMatch[1]);
-    return {
-        contents: [
-        {
-            uri: request.params.uri,
-            text: `Hello, ${name}! Welcome to MCP.`,
-        },
-      ],
-    };
-  }
-  
-  throw new Error("Resource not found");
-  // ...
-});
+  server.setRequestHandler(GetPromptRequestSchema, (request) => {
+    const { name, arguments: args } = request.params;
+    const promptHandler = promptHandlers[name as keyof typeof promptHandlers];
+    if (promptHandler) return promptHandler(args as { name: string, style?: string });
+    throw new Error("Prompt not found");
+  });
+//Tool request Handler
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    type ToolHandlerKey = keyof typeof toolHandlers;
+    const { name, arguments: params } = request.params ?? {};
+    const handler = toolHandlers[name as ToolHandlerKey];
+
+    if (!handler) throw new Error("Tool not found");
+
+    type HandlerParams = Parameters<typeof handler>;
+    return handler(...[params] as HandlerParams);
+  });
 };

@@ -1,13 +1,13 @@
-// src/index.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { setupHandlers } from './handler.ts';
+import { setupHandlers } from './handler.js';
 const server = new Server({
     name: "hello-mcp",
     version: "1.0.0",
 }, {
     capabilities: {
         resources: {},
+        prompts: {},
     },
 });
 setupHandlers(server);
