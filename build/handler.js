@@ -1,6 +1,7 @@
-import { ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ReadResourceRequestSchema, GetPromptRequestSchema, ListPromptsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ReadResourceRequestSchema, ListToolsRequestSchema, GetPromptRequestSchema, ListPromptsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
 import { resourceHandlers, resources } from "./resources.js";
 import { promptHandlers, prompts } from "./prompts.js";
+import { toolHandlers, tools } from "./tools.js";
 import { getResourceTemplate, resourceTemplates, } from "./resource-templates.js";
 export const setupHandlers = (server) => {
     // List available resources when clients request them
@@ -8,6 +9,10 @@ export const setupHandlers = (server) => {
     // Resource Templates
     server.setRequestHandler(ListResourceTemplatesRequestSchema, () => ({
         resourceTemplates,
+    }));
+    // tools 
+    server.setRequestHandler(ListToolsRequestSchema, async () => ({
+        tools: Object.values(tools),
     }));
     // Return resource content when clients request it
     server.setRequestHandler(ReadResourceRequestSchema, (request) => {
@@ -29,5 +34,13 @@ export const setupHandlers = (server) => {
         if (promptHandler)
             return promptHandler(args);
         throw new Error("Prompt not found");
+    });
+    //Tool request Handler
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+        const { name, arguments: params } = request.params ?? {};
+        const handler = toolHandlers[name];
+        if (!handler)
+            throw new Error("Tool not found");
+        return handler(...[params]);
     });
 };
