@@ -11,31 +11,39 @@ import { getDocs } from './utils/api.js';
  * Resource definitions exported to the MCP handler
  * Each resource has a name, description, uri and contentType
  */
-export const resources = {
-  'shadcn-ui-overview': {
+export const resources = [
+  {
     name: 'shadcn-ui-overview',
     description: 'Overview of shadcn/ui component library',
     uri: 'resource:shadcn-ui-overview',
     contentType: 'text/plain',
   },
-  'shadcn-ui-installation': {
+  {
     name: 'shadcn-ui-installation',
     description: 'Installation instructions for shadcn/ui',
     uri: 'resource:shadcn-ui-installation',
     contentType: 'text/plain',
   },
-  'shadcn-ui-component-list': {
+  {
     name: 'shadcn-ui-component-list',
     description: 'List of available shadcn/ui components',
     uri: 'resource:shadcn-ui-component-list',
     contentType: 'text/plain',
   },
-  'shadcn-ui-theming': {
+  {
     name: 'shadcn-ui-theming',
     description: 'Theming information for shadcn/ui',
     uri: 'resource:shadcn-ui-theming',
     contentType: 'text/plain',
   },
+];
+
+// Create a map for easier access in resource handlers
+const resourceMap = {
+  'shadcn-ui-overview': resources[0],
+  'shadcn-ui-installation': resources[1],
+  'shadcn-ui-component-list': resources[2],
+  'shadcn-ui-theming': resources[3],
 };
 
 /**

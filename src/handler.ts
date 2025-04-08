@@ -56,14 +56,29 @@ export const setupHandlers = (server: Server): void => {
       const resourceHandler = resourceHandlers[uri as keyof typeof resourceHandlers];
       if (resourceHandler) {
         const result = await Promise.resolve(resourceHandler());
-        return result;
+        // Ensure we're returning the expected structure with contents array
+        // Format as text content with a resource-like uri
+        return {
+          contentType: result.contentType,
+          contents: [{
+            uri: uri, // Use the requested URI
+            text: result.content // Use text field for plain content
+          }]
+        };
       }
       
       // Check if this is a generated resource from a template
       const resourceTemplateHandler = getResourceTemplate(uri);
       if (resourceTemplateHandler) {
         const result = await Promise.resolve(resourceTemplateHandler());
-        return result;
+        // Ensure we're returning the expected structure with contents array
+        return {
+          contentType: result.contentType,
+          contents: [{
+            uri: uri, // Use the requested URI
+            text: result.content // Use text field for plain content
+          }]
+        };
       }
       
       throw new McpError(ErrorCode.InvalidParams, `Resource not found: ${uri}`);

@@ -17,31 +17,39 @@ import {
  * Resource template definitions exported to the MCP handler
  * Each template has a name, description, uriTemplate and contentType
  */
-export const resourceTemplates = {
-  'component-docs': {
+export const resourceTemplates = [
+  {
     name: 'component-docs',
     description: 'Documentation for a specific shadcn/ui component',
     uriTemplate: 'resource-template:component-docs?component={component}',
     contentType: 'text/plain',
   },
-  'installation-docs': {
+  {
     name: 'installation-docs',
     description: 'Installation instructions for shadcn/ui components',
     uriTemplate: 'resource-template:installation-docs?component={component}',
     contentType: 'text/plain',
   },
-  'usage-docs': {
+  {
     name: 'usage-docs',
     description: 'Usage documentation for a specific shadcn/ui component',
     uriTemplate: 'resource-template:usage-docs?component={component}',
     contentType: 'text/plain',
   },
-  'component-examples': {
+  {
     name: 'component-examples',
     description: 'Examples for a specific shadcn/ui component',
     uriTemplate: 'resource-template:component-examples?component={component}',
     contentType: 'text/plain',
   },
+];
+
+// Create a map for easier access in getResourceTemplate
+const resourceTemplateMap = {
+  'component-docs': resourceTemplates[0],
+  'installation-docs': resourceTemplates[1],
+  'usage-docs': resourceTemplates[2],
+  'component-examples': resourceTemplates[3],
 };
 
 /**
