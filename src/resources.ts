@@ -5,7 +5,7 @@
  * Resources are static content or dynamically generated content referenced by URIs.
  */
 
-import { getDocs } from './utils/api.js';
+import {axios} from './utils/axios.js'
 
 /**
  * Resource definitions exported to the MCP handler
@@ -13,196 +13,82 @@ import { getDocs } from './utils/api.js';
  */
 export const resources = [
   {
-    name: 'shadcn-ui-overview',
-    description: 'Overview of shadcn/ui component library',
-    uri: 'resource:shadcn-ui-overview',
+    name: 'get_components',
+    description: 'List of available shadcn/ui components that can be used in the project',
+    uri: 'resource:get_components',
     contentType: 'text/plain',
-  },
-  {
-    name: 'shadcn-ui-installation',
-    description: 'Installation instructions for shadcn/ui',
-    uri: 'resource:shadcn-ui-installation',
-    contentType: 'text/plain',
-  },
-  {
-    name: 'shadcn-ui-component-list',
-    description: 'List of available shadcn/ui components',
-    uri: 'resource:shadcn-ui-component-list',
-    contentType: 'text/plain',
-  },
-  {
-    name: 'shadcn-ui-theming',
-    description: 'Theming information for shadcn/ui',
-    uri: 'resource:shadcn-ui-theming',
-    contentType: 'text/plain',
-  },
+  }
 ];
 
-// Create a map for easier access in resource handlers
-const resourceMap = {
-  'shadcn-ui-overview': resources[0],
-  'shadcn-ui-installation': resources[1],
-  'shadcn-ui-component-list': resources[2],
-  'shadcn-ui-theming': resources[3],
-};
-
 /**
- * Handler for the shadcn-ui-overview resource
- * @returns Overview content for shadcn/ui
+ * Handler for the get_components resource
+ * @returns List of available shadcn/ui components
  */
-const getShadcnUiOverview = async () => {
+const getComponentsList = async () => {
   try {
-    const overviewContent = await getDocs('getting-started');
+    // List of available components in shadcn/ui
+    // This hardcoded list can be updated in the future if needed
+    const components = [
+      "accordion",
+      "alert",
+      "alert-dialog",
+      "aspect-ratio",
+      "avatar",
+      "badge",
+      "breadcrumb",
+      "button",
+      "calendar",
+      "card",
+      "carousel",
+      "checkbox",
+      "collapsible",
+      "command",
+      "context-menu",
+      "data-table",
+      "date-picker",
+      "dialog",
+      "drawer",
+      "dropdown-menu",
+      "form",
+      "hover-card",
+      "input",
+      "label",
+      "menubar",
+      "navigation-menu",
+      "pagination",
+      "popover",
+      "progress",
+      "radio-group",
+      "resizable",
+      "scroll-area",
+      "select",
+      "separator",
+      "sheet",
+      "skeleton",
+      "slider",
+      "sonner",
+      "switch",
+      "table",
+      "tabs",
+      "textarea",
+      "toast",
+      "toggle",
+      "toggle-group",
+      "tooltip"
+    ];
     
     return {
-      content: overviewContent || `
-      shadcn/ui is a collection of reusable components built using Radix UI and Tailwind CSS.
-      
-      It's not a component library, but rather a collection of re-usable components that you can copy and paste into your apps.
-      
-      The components are accessible, customizable, and open source.
-      
-      To learn more, visit https://ui.shadcn.com/
-      `,
-      contentType: 'text/plain',
+      content: JSON.stringify(components, null, 2),
+      contentType: 'application/json',
     };
   } catch (error) {
-    console.error("Error fetching shadcn-ui-overview:", error);
+    console.error("Error fetching components list:", error);
     return {
-      content: "Error fetching overview content. Please try again later.",
-      contentType: 'text/plain',
-    };
-  }
-};
-
-/**
- * Handler for the shadcn-ui-installation resource
- * @returns Installation instructions for shadcn/ui
- */
-const getShadcnUiInstallation = async () => {
-  try {
-    const installationContent = await getDocs('installation');
-    
-    return {
-      content: installationContent || `
-      Installation instructions for shadcn/ui:
-      
-      1. Create a new project (e.g., Next.js, Vite, etc.)
-      2. Initialize shadcn/ui:
-         npx shadcn-ui@latest init
-      3. Answer the prompts for your project configuration
-      4. Install components as needed:
-         npx shadcn-ui@latest add button
-      
-      For more details, visit https://ui.shadcn.com/docs/installation
-      `,
-      contentType: 'text/plain',
-    };
-  } catch (error) {
-    console.error("Error fetching shadcn-ui-installation:", error);
-    return {
-      content: "Error fetching installation content. Please try again later.",
-      contentType: 'text/plain',
-    };
-  }
-};
-
-/**
- * Handler for the shadcn-ui-component-list resource
- * @returns List of shadcn/ui components
- */
-const getShadcnUiComponentList = async () => {
-  try {
-    return {
-      content: `
-      Available shadcn/ui components:
-      
-      - Accordion
-      - Alert
-      - Alert Dialog
-      - Aspect Ratio
-      - Avatar
-      - Badge
-      - Button
-      - Calendar
-      - Card
-      - Carousel
-      - Checkbox
-      - Collapsible
-      - Command
-      - Context Menu
-      - Data Table
-      - Date Picker
-      - Dialog
-      - Drawer
-      - Dropdown Menu
-      - Form
-      - Hover Card
-      - Input
-      - Label
-      - Menubar
-      - Navigation Menu
-      - Pagination
-      - Popover
-      - Progress
-      - Radio Group
-      - Scroll Area
-      - Select
-      - Separator
-      - Sheet
-      - Skeleton
-      - Slider
-      - Switch
-      - Table
-      - Tabs
-      - Textarea
-      - Toast
-      - Toggle
-      - Toggle Group
-      - Tooltip
-      
-      For details on each component, use the get_component_details tool.
-      `,
-      contentType: 'text/plain',
-    };
-  } catch (error) {
-    console.error("Error fetching shadcn-ui-component-list:", error);
-    return {
-      content: "Error fetching component list. Please try again later.",
-      contentType: 'text/plain',
-    };
-  }
-};
-
-/**
- * Handler for the shadcn-ui-theming resource
- * @returns Theming information for shadcn/ui
- */
-const getShadcnUiTheming = async () => {
-  try {
-    const themingContent = await getDocs('theming');
-    
-    return {
-      content: themingContent || `
-      Theming in shadcn/ui:
-      
-      shadcn/ui components use CSS variables for theming. You can customize the theme by:
-      
-      1. Editing the CSS variables in your globals.css file
-      2. Using the provided themes or creating custom themes
-      3. Using the Dark Mode feature
-      
-      The default theme includes light and dark modes.
-      
-      For more details on theming, visit https://ui.shadcn.com/docs/theming
-      `,
-      contentType: 'text/plain',
-    };
-  } catch (error) {
-    console.error("Error fetching shadcn-ui-theming:", error);
-    return {
-      content: "Error fetching theming content. Please try again later.",
-      contentType: 'text/plain',
+      content: JSON.stringify({
+        error: "Failed to fetch components list",
+        message: error instanceof Error ? error.message : String(error)
+      }, null, 2),
+      contentType: 'application/json',
     };
   }
 };
@@ -212,8 +98,5 @@ const getShadcnUiTheming = async () => {
  * Each handler function returns the resource content when requested
  */
 export const resourceHandlers = {
-  'resource:shadcn-ui-overview': getShadcnUiOverview,
-  'resource:shadcn-ui-installation': getShadcnUiInstallation,
-  'resource:shadcn-ui-component-list': getShadcnUiComponentList,
-  'resource:shadcn-ui-theming': getShadcnUiTheming,
+  'resource:get_components': getComponentsList,
 };
