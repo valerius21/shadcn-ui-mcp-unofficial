@@ -24,6 +24,7 @@ import {
   resourceTemplates,
 } from "./resource-templates.js";
 import { z } from "zod";
+import * as componentSchemas from "./schemas/component.js";
 
 /**
  * Sets up all request handlers for the MCP server
@@ -52,13 +53,18 @@ export const setupHandlers = (server: Server): void => {
     
     try {
       // Check if this is a static resource
-      const resourceHandler =
-        resourceHandlers[uri as keyof typeof resourceHandlers];
-      if (resourceHandler) return await resourceHandler();
+      const resourceHandler = resourceHandlers[uri as keyof typeof resourceHandlers];
+      if (resourceHandler) {
+        const result = await Promise.resolve(resourceHandler());
+        return result;
+      }
       
       // Check if this is a generated resource from a template
       const resourceTemplateHandler = getResourceTemplate(uri);
-      if (resourceTemplateHandler) return await resourceTemplateHandler();
+      if (resourceTemplateHandler) {
+        const result = await Promise.resolve(resourceTemplateHandler());
+        return result;
+      }
       
       throw new McpError(ErrorCode.InvalidParams, `Resource not found: ${uri}`);
     } catch (error) {
@@ -120,9 +126,9 @@ export const setupHandlers = (server: Server): void => {
         }
       }
       
-      // Call the handler with the validated parameters
-      // This fixes the spread argument type error by using a direct function call
-      return await handler(validatedParams);
+      // Ensure handler returns a Promise
+      const result = await Promise.resolve(handler(validatedParams));
+      return result;
     } catch (error) {
       if (error instanceof McpError) throw error;
       throw new McpError(
@@ -131,6 +137,11 @@ export const setupHandlers = (server: Server): void => {
       );
     }
   });
+  
+  // Add global error handler
+  server.onerror = (error) => {
+    console.error("[MCP Server Error]", error);
+  };
 };
 
 /**
@@ -139,35 +150,32 @@ export const setupHandlers = (server: Server): void => {
  * @returns Zod schema or undefined
  */
 function getToolSchema(toolName: string): z.ZodType | undefined {
-  // Import schemas dynamically based on tool name
   try {
-    const schemas = require('./schemas/component.js');
-    
     switch(toolName) {
       case 'get_component':
       case 'get_component_details':
-        return schemas.GetComponentSchema;
+        return componentSchemas.GetComponentSchema;
         
       case 'get_examples':
-        return schemas.GetExamplesSchema;
+        return componentSchemas.GetExamplesSchema;
         
       case 'get_usage':
-        return schemas.GetUsageSchema;
+        return componentSchemas.GetUsageSchema;
         
       case 'search_components':
-        return schemas.SearchQuerySchema;
+        return componentSchemas.SearchQuerySchema;
         
       case 'get_themes':
-        return schemas.GetThemesSchema;
+        return componentSchemas.GetThemesSchema;
         
       case 'get_blocks':
-        return schemas.GetBlocksSchema;
+        return componentSchemas.GetBlocksSchema;
         
       default:
         return undefined;
     }
   } catch (error) {
-    console.error("Error loading schema:", error);
+    console.error("Error getting schema:", error);
     return undefined;
   }
 }

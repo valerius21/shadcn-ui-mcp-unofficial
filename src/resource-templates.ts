@@ -53,15 +53,15 @@ export const getResourceTemplate = (uri: string) => {
   // Component documentation template
   if (uri.startsWith('resource-template:component-docs')) {
     return async () => {
-      const componentName = extractComponentParam(uri);
-      if (!componentName) {
-        return { 
-          content: 'Missing component parameter', 
-          contentType: 'text/plain' 
-        };
-      }
-      
       try {
+        const componentName = extractComponentParam(uri);
+        if (!componentName) {
+          return { 
+            content: 'Missing component parameter', 
+            contentType: 'text/plain' 
+          };
+        }
+        
         const componentInfo = await getComponentDetails(componentName);
         
         return {
@@ -90,6 +90,7 @@ For more examples, check the component-examples resource template.
           contentType: 'text/plain',
         };
       } catch (error) {
+        console.error(`Error in component-docs template:`, error);
         return {
           content: `Error fetching component documentation: ${error instanceof Error ? error.message : String(error)}`,
           contentType: 'text/plain',
@@ -101,10 +102,11 @@ For more examples, check the component-examples resource template.
   // Installation documentation template
   if (uri.startsWith('resource-template:installation-docs')) {
     return async () => {
-      const componentName = extractComponentParam(uri);
-      if (!componentName) {
-        return { 
-          content: `
+      try {
+        const componentName = extractComponentParam(uri);
+        if (!componentName) {
+          return { 
+            content: `
 # General Installation for shadcn/ui
 
 To add shadcn/ui to your project:
@@ -122,12 +124,11 @@ To add shadcn/ui to your project:
    \`\`\`
 
 For more detailed instructions, visit the documentation at https://ui.shadcn.com/docs/installation
-          `, 
-          contentType: 'text/plain' 
-        };
-      }
-      
-      try {
+            `, 
+            contentType: 'text/plain' 
+          };
+        }
+        
         const config = await getComponentConfig(componentName);
         
         return {
@@ -147,6 +148,7 @@ For more details, visit https://ui.shadcn.com/docs/components/${componentName}
           contentType: 'text/plain',
         };
       } catch (error) {
+        console.error(`Error in installation-docs template:`, error);
         return {
           content: `Error fetching installation documentation: ${error instanceof Error ? error.message : String(error)}`,
           contentType: 'text/plain',
@@ -158,15 +160,15 @@ For more details, visit https://ui.shadcn.com/docs/components/${componentName}
   // Usage documentation template
   if (uri.startsWith('resource-template:usage-docs')) {
     return async () => {
-      const componentName = extractComponentParam(uri);
-      if (!componentName) {
-        return { 
-          content: 'Missing component parameter', 
-          contentType: 'text/plain' 
-        };
-      }
-      
       try {
+        const componentName = extractComponentParam(uri);
+        if (!componentName) {
+          return { 
+            content: 'Missing component parameter', 
+            contentType: 'text/plain' 
+          };
+        }
+        
         const componentInfo = await getComponentDetails(componentName);
         
         return {
@@ -195,6 +197,7 @@ For more examples, check the component-examples resource template.
           contentType: 'text/plain',
         };
       } catch (error) {
+        console.error(`Error in usage-docs template:`, error);
         return {
           content: `Error fetching usage documentation: ${error instanceof Error ? error.message : String(error)}`,
           contentType: 'text/plain',
@@ -206,15 +209,15 @@ For more examples, check the component-examples resource template.
   // Component examples template
   if (uri.startsWith('resource-template:component-examples')) {
     return async () => {
-      const componentName = extractComponentParam(uri);
-      if (!componentName) {
-        return { 
-          content: 'Missing component parameter', 
-          contentType: 'text/plain' 
-        };
-      }
-      
       try {
+        const componentName = extractComponentParam(uri);
+        if (!componentName) {
+          return { 
+            content: 'Missing component parameter', 
+            contentType: 'text/plain' 
+          };
+        }
+        
         const examples = await getComponentExamples(componentName);
         
         return {
@@ -235,6 +238,7 @@ ${examples.length === 0 ? 'No examples available.' : examples.map(example =>
           contentType: 'text/plain',
         };
       } catch (error) {
+        console.error(`Error in component-examples template:`, error);
         return {
           content: `Error fetching component examples: ${error instanceof Error ? error.message : String(error)}`,
           contentType: 'text/plain',

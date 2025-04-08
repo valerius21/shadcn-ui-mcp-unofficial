@@ -43,20 +43,28 @@ export const resources = {
  * @returns Overview content for shadcn/ui
  */
 const getShadcnUiOverview = async () => {
-  const overviewContent = await getDocs('getting-started');
-  
-  return {
-    content: overviewContent || `
-    shadcn/ui is a collection of reusable components built using Radix UI and Tailwind CSS.
+  try {
+    const overviewContent = await getDocs('getting-started');
     
-    It's not a component library, but rather a collection of re-usable components that you can copy and paste into your apps.
-    
-    The components are accessible, customizable, and open source.
-    
-    To learn more, visit https://ui.shadcn.com/
-    `,
-    contentType: 'text/plain',
-  };
+    return {
+      content: overviewContent || `
+      shadcn/ui is a collection of reusable components built using Radix UI and Tailwind CSS.
+      
+      It's not a component library, but rather a collection of re-usable components that you can copy and paste into your apps.
+      
+      The components are accessible, customizable, and open source.
+      
+      To learn more, visit https://ui.shadcn.com/
+      `,
+      contentType: 'text/plain',
+    };
+  } catch (error) {
+    console.error("Error fetching shadcn-ui-overview:", error);
+    return {
+      content: "Error fetching overview content. Please try again later.",
+      contentType: 'text/plain',
+    };
+  }
 };
 
 /**
@@ -64,23 +72,31 @@ const getShadcnUiOverview = async () => {
  * @returns Installation instructions for shadcn/ui
  */
 const getShadcnUiInstallation = async () => {
-  const installationContent = await getDocs('installation');
-  
-  return {
-    content: installationContent || `
-    Installation instructions for shadcn/ui:
+  try {
+    const installationContent = await getDocs('installation');
     
-    1. Create a new project (e.g., Next.js, Vite, etc.)
-    2. Initialize shadcn/ui:
-       npx shadcn-ui@latest init
-    3. Answer the prompts for your project configuration
-    4. Install components as needed:
-       npx shadcn-ui@latest add button
-    
-    For more details, visit https://ui.shadcn.com/docs/installation
-    `,
-    contentType: 'text/plain',
-  };
+    return {
+      content: installationContent || `
+      Installation instructions for shadcn/ui:
+      
+      1. Create a new project (e.g., Next.js, Vite, etc.)
+      2. Initialize shadcn/ui:
+         npx shadcn-ui@latest init
+      3. Answer the prompts for your project configuration
+      4. Install components as needed:
+         npx shadcn-ui@latest add button
+      
+      For more details, visit https://ui.shadcn.com/docs/installation
+      `,
+      contentType: 'text/plain',
+    };
+  } catch (error) {
+    console.error("Error fetching shadcn-ui-installation:", error);
+    return {
+      content: "Error fetching installation content. Please try again later.",
+      contentType: 'text/plain',
+    };
+  }
 };
 
 /**
@@ -88,58 +104,66 @@ const getShadcnUiInstallation = async () => {
  * @returns List of shadcn/ui components
  */
 const getShadcnUiComponentList = async () => {
-  return {
-    content: `
-    Available shadcn/ui components:
-    
-    - Accordion
-    - Alert
-    - Alert Dialog
-    - Aspect Ratio
-    - Avatar
-    - Badge
-    - Button
-    - Calendar
-    - Card
-    - Carousel
-    - Checkbox
-    - Collapsible
-    - Command
-    - Context Menu
-    - Data Table
-    - Date Picker
-    - Dialog
-    - Drawer
-    - Dropdown Menu
-    - Form
-    - Hover Card
-    - Input
-    - Label
-    - Menubar
-    - Navigation Menu
-    - Pagination
-    - Popover
-    - Progress
-    - Radio Group
-    - Scroll Area
-    - Select
-    - Separator
-    - Sheet
-    - Skeleton
-    - Slider
-    - Switch
-    - Table
-    - Tabs
-    - Textarea
-    - Toast
-    - Toggle
-    - Toggle Group
-    - Tooltip
-    
-    For details on each component, use the get_component_details tool.
-    `,
-    contentType: 'text/plain',
-  };
+  try {
+    return {
+      content: `
+      Available shadcn/ui components:
+      
+      - Accordion
+      - Alert
+      - Alert Dialog
+      - Aspect Ratio
+      - Avatar
+      - Badge
+      - Button
+      - Calendar
+      - Card
+      - Carousel
+      - Checkbox
+      - Collapsible
+      - Command
+      - Context Menu
+      - Data Table
+      - Date Picker
+      - Dialog
+      - Drawer
+      - Dropdown Menu
+      - Form
+      - Hover Card
+      - Input
+      - Label
+      - Menubar
+      - Navigation Menu
+      - Pagination
+      - Popover
+      - Progress
+      - Radio Group
+      - Scroll Area
+      - Select
+      - Separator
+      - Sheet
+      - Skeleton
+      - Slider
+      - Switch
+      - Table
+      - Tabs
+      - Textarea
+      - Toast
+      - Toggle
+      - Toggle Group
+      - Tooltip
+      
+      For details on each component, use the get_component_details tool.
+      `,
+      contentType: 'text/plain',
+    };
+  } catch (error) {
+    console.error("Error fetching shadcn-ui-component-list:", error);
+    return {
+      content: "Error fetching component list. Please try again later.",
+      contentType: 'text/plain',
+    };
+  }
 };
 
 /**
@@ -147,24 +171,32 @@ const getShadcnUiComponentList = async () => {
  * @returns Theming information for shadcn/ui
  */
 const getShadcnUiTheming = async () => {
-  const themingContent = await getDocs('theming');
-  
-  return {
-    content: themingContent || `
-    Theming in shadcn/ui:
+  try {
+    const themingContent = await getDocs('theming');
     
-    shadcn/ui components use CSS variables for theming. You can customize the theme by:
-    
-    1. Editing the CSS variables in your globals.css file
-    2. Using the provided themes or creating custom themes
-    3. Using the Dark Mode feature
-    
-    The default theme includes light and dark modes.
-    
-    For more details on theming, visit https://ui.shadcn.com/docs/theming
-    `,
-    contentType: 'text/plain',
-  };
+    return {
+      content: themingContent || `
+      Theming in shadcn/ui:
+      
+      shadcn/ui components use CSS variables for theming. You can customize the theme by:
+      
+      1. Editing the CSS variables in your globals.css file
+      2. Using the provided themes or creating custom themes
+      3. Using the Dark Mode feature
+      
+      The default theme includes light and dark modes.
+      
+      For more details on theming, visit https://ui.shadcn.com/docs/theming
+      `,
+      contentType: 'text/plain',
+    };
+  } catch (error) {
+    console.error("Error fetching shadcn-ui-theming:", error);
+    return {
+      content: "Error fetching theming content. Please try again later.",
+      contentType: 'text/plain',
+    };
+  }
 };
 
 /**
