@@ -13,22 +13,46 @@ This MCP server provides tools and resources to help AI assistants:
 ## Project Structure
 
 ```
-
 shadcn-ui-mcp-unofficial/
 ├── build/             # Compiled JavaScript files
+│   ├── handler.js
+│   ├── http.js
+│   ├── index.js
+│   ├── prompts.js
+│   ├── resource-templates.js
+│   ├── resources.js
+│   ├── tools.js
+│   ├── schemas/       # Compiled schemas
+│   │   └── component.js
+│   └── types/         # Compiled type definitions
+│       ├── component.js
+│       └── doc.js
+├── docs/              # Documentation assets
+│   └── images/        # Images for documentation
+│       ├── chat-interface.png
+│       └── server-configured.png
 ├── src/               # TypeScript source files
-│   ├── index.ts       # Server entry point
 │   ├── handler.ts     # Request handlers implementation
-│   ├── tools.ts       # Tool definitions for component retrieval
-│   ├── resources.ts   # Resource definitions for component listing
-│   ├── resource-templates.ts # Templates for installation guides
+│   ├── http.ts        # HTTP server implementation
+│   ├── index.ts       # Server entry point
 │   ├── prompts.ts     # Prompt definitions
+│   ├── resource-templates.ts # Templates for installation guides
+│   ├── resources.ts   # Resource definitions for component listing
+│   ├── tools.ts       # Tool definitions for component retrieval
 │   ├── schemas/       # JSON schemas for validation
+│   │   └── component.ts
 │   ├── types/         # TypeScript type definitions
+│   │   ├── component.ts
+│   │   └── doc.ts
 │   └── utils/         # Utility functions and API clients
+│       ├── api.ts
+│       ├── axios.ts
+│       └── cache.ts
 ├── package.json       # Project dependencies and scripts
-├── tsconfig.json      # TypeScript configuration
-└── startup.sh         # Script to clean, build, and start the server
+├── README.md          # Project documentation
+├── startup.sh         # Script to clean, build, and start the server
+├── todo.md            # Project TODO list
+└── tsconfig.json      # TypeScript configuration
 ```
 
 ## Getting Started
@@ -145,3 +169,85 @@ The MCP Inspector helps you debug your server. When you run the server with `npm
 - [MCP Typescript SDK](https://github.com/modelcontextprotocol/typescript-sdk?tab=readme-ov-file)
 - [Shadcn UI Documentation](https://ui.shadcn.com/)
 - [Building MCP Servers](https://medium.com/@cstroliadavis/building-mcp-servers-f9ce29814f1f) by Craig Strolia-Davis
+
+## Usage Examples
+
+This section provides visual examples of how to use the shadcn/ui MCP server in different environments.
+
+### VS Code Agent Mode Integration
+
+The shadcn/ui MCP server can be integrated with VS Code's Agent Mode to provide AI assistants with direct access to shadcn/ui components.
+
+#### Setting Up in VS Code
+
+1. Open your VS Code settings.json file
+2. Add the MCP server configuration:
+
+```json
+"mcp": {
+    "servers": {
+        "shadcnui": {
+            "type": "sse",
+            "url": "http://localhost:3001/sse"
+        }
+    }
+}
+```
+
+#### Using with VS Code Agent Mode
+
+Below are examples of using the shadcn/ui MCP server with VS Code's Agent Mode:
+
+1. **Listing Available Tools**
+   - The MCP server shows the available tools, such as `get_component` and `get_component_demo`.
+   - ![Example: Listing Available Tools](./docs/images/server-configured.png)
+
+2. **Fetching Component Source Code**
+   - The AI assistant retrieves the source code for a specific component, such as `button.tsx`.
+   - ![Example: Fetching Component Source Code](./docs/images/chat-interface.png)
+
+## Running in SSE Mode
+
+The Server-Sent Events (SSE) mode allows other applications to connect to your MCP server over HTTP. This is useful for integrating with tools like VS Code Agent Mode.
+
+To run the server in SSE mode:
+
+1. Build and start the HTTP server:
+
+```bash
+npm run start:http
+```
+
+2. You should see output similar to:
+
+```
+MCP server listening on port 3001
+SSE endpoint available at http://localhost:3001/sse
+Message endpoint available at http://localhost:3001/messages
+```
+
+3. The server is now ready to accept connections. You can configure VS Code or other MCP clients to connect to the SSE endpoint at `http://localhost:3001/sse`.
+
+#### Testing the SSE Endpoint
+
+You can test if your SSE endpoint is working correctly using curl:
+
+```bash
+curl -N http://localhost:3001/sse
+```
+
+This should start streaming events from the server, indicating that the SSE endpoint is working properly.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Connection Refused**: Ensure the server is running and the port is not blocked by a firewall.
+2. **Component Not Found**: Check that the component name is correct and exists in the shadcn/ui library.
+3. **VS Code Not Connecting**: Verify the settings.json configuration has the correct URL.
+
+### Debugging Tips
+
+- Use the MCP Inspector at `http://127.0.0.1:6274` when running with `npm run start` to debug request/response flows.
+- Check the console output for error messages.
+- Ensure you have network connectivity to access the shadcn/ui GitHub repository.

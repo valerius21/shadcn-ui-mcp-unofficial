@@ -5,8 +5,6 @@
  * Resources are static content or dynamically generated content referenced by URIs.
  */
 
-import {axios} from './utils/axios.js'
-
 /**
  * Resource definitions exported to the MCP handler
  * Each resource has a name, description, uri and contentType
