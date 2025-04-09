@@ -7,17 +7,22 @@ import {
   Theme,
   Block
 } from '../schemas/component.js';
+import { cache } from './cache.js';
 
 const SHADCN_DOCS_URL = "https://ui.shadcn.com";
 const SHADCN_GITHUB_URL = "https://github.com/shadcn-ui/ui";
 const SHADCN_RAW_GITHUB_URL = "https://raw.githubusercontent.com/shadcn-ui/ui/main";
 
-// Cache storage
-const componentCache: Map<string, ComponentInfo> = new Map();
-const examplesCache: Map<string, ComponentExample[]> = new Map();
-const themesCache: Theme[] | null = null;
-const blocksCache: Block[] | null = null;
-let componentsListCache: ComponentInfo[] | null = null;
+// Cache keys prefixes for different types of data
+const CACHE_KEYS = {
+  COMPONENT: 'component:',
+  COMPONENT_LIST: 'component-list',
+  EXAMPLE: 'example:',
+  THEMES: 'themes',
+  BLOCKS: 'blocks',
+  BLOCK_DETAILS: 'block-details:',
+  DOCS: 'docs:'
+};
 
 /**
  * Get demo for a component from a URL
@@ -32,21 +37,15 @@ function getComponentDemo(name: string, url: string): Promise<ComponentInfo> {
         throw new Error("Invalid URL");
     }
 
-    // Check cache first
-    if (componentCache.has(name)) {
-        return Promise.resolve(componentCache.get(name)!);
-    }
-
-    return axios.github.get(url).then((res) => {
+    const cacheKey = `${CACHE_KEYS.COMPONENT}demo:${name}`;
+    
+    return cache.getOrFetch(cacheKey, async () => {
+        const res = await axios.github.get(url);
         // Parse the response using cheerio
         const $ = cheerio.load(res.data);
         
         // Extract component information
         const componentInfo = extractComponentInfo($, name, url);
-        
-        // Cache the result
-        componentCache.set(name, componentInfo);
-        
         return componentInfo;
     });
 }
@@ -56,11 +55,8 @@ function getComponentDemo(name: string, url: string): Promise<ComponentInfo> {
  * @returns Promise with an array of component info
  */
 async function listComponents(): Promise<ComponentInfo[]> {
-    if (componentsListCache) {
-        return componentsListCache;
-    }
-    
-    return axios.shadcn.get('/components').then((res) => {
+    return cache.getOrFetch(CACHE_KEYS.COMPONENT_LIST, async () => {
+        const res = await axios.shadcn.get('/components');
         const $ = cheerio.load(res.data);
         const components: ComponentInfo[] = [];
         
@@ -80,7 +76,6 @@ async function listComponents(): Promise<ComponentInfo[]> {
             }
         });
         
-        componentsListCache = components;
         return components;
     });
 }
@@ -91,20 +86,14 @@ async function listComponents(): Promise<ComponentInfo[]> {
  * @returns Promise with component information
  */
 async function getComponentDetails(componentName: string): Promise<ComponentInfo> {
-    // Check cache first
-    if (componentCache.has(componentName)) {
-        return componentCache.get(componentName)!;
-    }
+    const cacheKey = `${CACHE_KEYS.COMPONENT}${componentName}`;
     
-    return axios.shadcn.get(`/components/${componentName}`).then((res) => {
+    return cache.getOrFetch(cacheKey, async () => {
+        const res = await axios.shadcn.get(`/components/${componentName}`);
         const $ = cheerio.load(res.data);
         
         // Extract component information
         const componentInfo = extractComponentInfo($, componentName);
-        
-        // Cache the result
-        componentCache.set(componentName, componentInfo);
-        
         return componentInfo;
     });
 }
@@ -248,7 +237,10 @@ function extractVariants($: cheerio.CheerioAPI, componentName: string): Record<s
  * @returns Promise with component examples
  */
 async function getComponentExamples(componentName: string): Promise<ComponentExample[]> {
-    return axios.shadcn.get(`/components/${componentName}`).then(async (res) => {
+    const cacheKey = `${CACHE_KEYS.EXAMPLE}${componentName}`;
+    
+    return cache.getOrFetch(cacheKey, async () => {
+        const res = await axios.shadcn.get(`/components/${componentName}`);
         const $ = cheerio.load(res.data);
         
         const examples: ComponentExample[] = [];
@@ -355,17 +347,12 @@ async function collectGitHubExamples(componentName: string, examples: ComponentE
  * @returns Promise with filtered components
  */
 async function searchComponents(query: string): Promise<ComponentInfo[]> {
+    // We don't cache search results as they depend on the query
     // Ensure components list is loaded
-    if (!componentsListCache) {
-        await listComponents();
-    }
-    
-    if (!componentsListCache) {
-        return [];
-    }
+    const components = await listComponents();
     
     // Filter components matching the search query
-    return componentsListCache.filter(component => {
+    return components.filter(component => {
         return (
             component.name.includes(query) ||
             component.description.toLowerCase().includes(query)
@@ -379,17 +366,13 @@ async function searchComponents(query: string): Promise<ComponentInfo[]> {
  * @returns Promise with usage instructions
  */
 async function getComponentUsage(componentName: string): Promise<string> {
-  // Try to get from cache first
-  if (componentCache.has(componentName)) {
-    const cachedComponent = componentCache.get(componentName)!;
-    if (cachedComponent.usage) {
-      return cachedComponent.usage;
-    }
-  }
+    const cacheKey = `${CACHE_KEYS.COMPONENT}usage:${componentName}`;
   
-  // If not in cache, fetch full component details
-  const componentInfo = await getComponentDetails(componentName);
-  return componentInfo.usage || "No usage instructions available for this component.";
+    return cache.getOrFetch(cacheKey, async () => {
+        // Try to get from component details
+        const componentInfo = await getComponentDetails(componentName);
+        return componentInfo.usage || "No usage instructions available for this component.";
+    });
 }
 
 /**
@@ -398,51 +381,52 @@ async function getComponentUsage(componentName: string): Promise<string> {
  * @returns Promise with list of themes
  */
 async function getThemes(query?: string): Promise<Theme[]> {
-  if (themesCache) {
-    return filterThemes(themesCache, query);
-  }
-  
-  try {
-    // Fetch themes from shadcn/ui docs
-    const response = await axios.shadcn.get('/themes');
-    const $ = cheerio.load(response.data);
-    
-    const themes: Theme[] = [];
-    
-    // Extract theme cards/sections
-    $('.grid-cols-1').each((_, el) => {
-      const themeCard = $(el);
-      const nameEl = themeCard.find('h3').first();
-      const name = nameEl.text().trim();
-      
-      if (name) {
-        const descriptionEl = nameEl.next('p');
-        const description = descriptionEl.text().trim();
-        
-        // Find preview image if available
-        const imgEl = themeCard.find('img');
-        const preview = imgEl.attr('src') || undefined;
-        
-        // Find author info if available
-        const authorEl = themeCard.find('a[href^="https://github.com/"]');
-        const author = authorEl.text().trim() || undefined;
-        
-        themes.push({
-          name,
-          description,
-          url: `${SHADCN_DOCS_URL}/themes#${name.toLowerCase().replace(/\s+/g, '-')}`,
-          preview,
-          author
-        });
-      }
+    // We cache the full themes list, but not filtered results
+    const themes = await cache.getOrFetch(CACHE_KEYS.THEMES, async () => {
+        try {
+            // Fetch themes from shadcn/ui docs
+            const response = await axios.shadcn.get('/themes');
+            const $ = cheerio.load(response.data);
+            
+            const themesData: Theme[] = [];
+            
+            // Extract theme cards/sections
+            $('.grid-cols-1').each((_, el) => {
+                const themeCard = $(el);
+                const nameEl = themeCard.find('h3').first();
+                const name = nameEl.text().trim();
+                
+                if (name) {
+                    const descriptionEl = nameEl.next('p');
+                    const description = descriptionEl.text().trim();
+                    
+                    // Find preview image if available
+                    const imgEl = themeCard.find('img');
+                    const preview = imgEl.attr('src') || undefined;
+                    
+                    // Find author info if available
+                    const authorEl = themeCard.find('a[href^="https://github.com/"]');
+                    const author = authorEl.text().trim() || undefined;
+                    
+                    themesData.push({
+                        name,
+                        description,
+                        url: `${SHADCN_DOCS_URL}/themes#${name.toLowerCase().replace(/\s+/g, '-')}`,
+                        preview,
+                        author
+                    });
+                }
+            });
+            
+            return themesData;
+            
+        } catch (error) {
+            console.error("Error fetching themes:", error);
+            return [];
+        }
     });
-    
+  
     return filterThemes(themes, query);
-    
-  } catch (error) {
-    console.error("Error fetching themes:", error);
-    return [];
-  }
 }
 
 /**
@@ -452,17 +436,17 @@ async function getThemes(query?: string): Promise<Theme[]> {
  * @returns Filtered themes
  */
 function filterThemes(themes: Theme[], query?: string): Theme[] {
-  if (!query) {
-    return themes;
-  }
-  
-  const lowerQuery = query.toLowerCase();
-  
-  return themes.filter(theme => 
-    theme.name.toLowerCase().includes(lowerQuery) ||
-    theme.description.toLowerCase().includes(lowerQuery) ||
-    (theme.author && theme.author.toLowerCase().includes(lowerQuery))
-  );
+    if (!query) {
+        return themes;
+    }
+    
+    const lowerQuery = query.toLowerCase();
+    
+    return themes.filter(theme => 
+        theme.name.toLowerCase().includes(lowerQuery) ||
+        theme.description.toLowerCase().includes(lowerQuery) ||
+        (theme.author && theme.author.toLowerCase().includes(lowerQuery))
+    );
 }
 
 /**
@@ -472,42 +456,43 @@ function filterThemes(themes: Theme[], query?: string): Theme[] {
  * @returns Promise with list of blocks
  */
 async function getBlocks(query?: string, category?: string): Promise<Block[]> {
-  if (blocksCache) {
-    return filterBlocks(blocksCache, query, category);
-  }
-  
-  try {
-    // Fetch blocks from shadcn/ui docs or GitHub
-    const response = await axios.github.get('apps/www/registry/default/example/');
-    
-    // For simplicity, we're assuming the response includes a directory listing
-    const blocks: Block[] = [];
-    
-    // Parse the GitHub directory response
-    const $ = cheerio.load(response.data);
-    
-    $('a').each((_, el) => {
-      const href = $(el).attr('href');
-      
-      // Find .tsx files that are examples
-      if (href && href.endsWith('.tsx')) {
-        const name = href.replace('.tsx', '').replace(/-/g, ' ');
-        
-        blocks.push({
-          name: name.charAt(0).toUpperCase() + name.slice(1),
-          description: `UI block for ${name}`,
-          code: `// Code will be fetched when block is requested`,
-          dependencies: []
-        });
-      }
+    // Cache the full blocks list, but not filtered results
+    const blocks = await cache.getOrFetch(CACHE_KEYS.BLOCKS, async () => {
+        try {
+            // Fetch blocks from shadcn/ui docs or GitHub
+            const response = await axios.github.get('apps/www/registry/default/example/');
+            
+            // For simplicity, we're assuming the response includes a directory listing
+            const blocksData: Block[] = [];
+            
+            // Parse the GitHub directory response
+            const $ = cheerio.load(response.data);
+            
+            $('a').each((_, el) => {
+                const href = $(el).attr('href');
+                
+                // Find .tsx files that are examples
+                if (href && href.endsWith('.tsx')) {
+                    const name = href.replace('.tsx', '').replace(/-/g, ' ');
+                    
+                    blocksData.push({
+                        name: name.charAt(0).toUpperCase() + name.slice(1),
+                        description: `UI block for ${name}`,
+                        code: `// Code will be fetched when block is requested`,
+                        dependencies: []
+                    });
+                }
+            });
+            
+            return blocksData;
+            
+        } catch (error) {
+            console.error("Error fetching blocks:", error);
+            return [];
+        }
     });
-    
+  
     return filterBlocks(blocks, query, category);
-    
-  } catch (error) {
-    console.error("Error fetching blocks:", error);
-    return [];
-  }
 }
 
 /**
@@ -516,23 +501,27 @@ async function getBlocks(query?: string, category?: string): Promise<Block[]> {
  * @returns Promise with the block including full code
  */
 async function getBlockDetails(blockName: string): Promise<Block | null> {
-  try {
-    const formattedName = blockName.toLowerCase().replace(/\s+/g, '-');
-    const response = await axios.github.get(`apps/www/registry/default/example/${formattedName}.tsx`);
-    
-    if (response.status === 200) {
-      return {
-        name: blockName,
-        description: `UI block for ${blockName}`,
-        code: response.data,
-        dependencies: extractDependencies(response.data)
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error(`Error fetching block details for ${blockName}:`, error);
-    return null;
-  }
+    const cacheKey = `${CACHE_KEYS.BLOCK_DETAILS}${blockName}`;
+  
+    return cache.getOrFetch(cacheKey, async () => {
+        try {
+            const formattedName = blockName.toLowerCase().replace(/\s+/g, '-');
+            const response = await axios.github.get(`apps/www/registry/default/example/${formattedName}.tsx`);
+            
+            if (response.status === 200) {
+                return {
+                    name: blockName,
+                    description: `UI block for ${blockName}`,
+                    code: response.data,
+                    dependencies: extractDependencies(response.data)
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error(`Error fetching block details for ${blockName}:`, error);
+            return null;
+        }
+    });
 }
 
 /**
@@ -541,20 +530,20 @@ async function getBlockDetails(blockName: string): Promise<Block | null> {
  * @returns Array of dependencies
  */
 function extractDependencies(code: string): string[] {
-  const dependencies: string[] = [];
-  
-  // Extract import statements
-  const importRegex = /import\s+{([^}]+)}\s+from\s+['"]([^'"]+)['"]/g;
-  let match;
-  
-  while ((match = importRegex.exec(code)) !== null) {
-    const importPath = match[2];
-    if (!importPath.startsWith('.')) {
-      dependencies.push(importPath);
+    const dependencies: string[] = [];
+    
+    // Extract import statements
+    const importRegex = /import\s+{([^}]+)}\s+from\s+['"]([^'"]+)['"]/g;
+    let match;
+    
+    while ((match = importRegex.exec(code)) !== null) {
+        const importPath = match[2];
+        if (!importPath.startsWith('.')) {
+            dependencies.push(importPath);
+        }
     }
-  }
-  
-  return [...new Set(dependencies)]; // Remove duplicates
+    
+    return [...new Set(dependencies)]; // Remove duplicates
 }
 
 /**
@@ -565,25 +554,25 @@ function extractDependencies(code: string): string[] {
  * @returns Filtered blocks
  */
 function filterBlocks(blocks: Block[], query?: string, category?: string): Block[] {
-  let filtered = [...blocks];
-  
-  if (query) {
-    const lowerQuery = query.toLowerCase();
-    filtered = filtered.filter(block => 
-      block.name.toLowerCase().includes(lowerQuery) ||
-      block.description.toLowerCase().includes(lowerQuery)
-    );
-  }
-  
-  if (category) {
-    const lowerCategory = category.toLowerCase();
-    filtered = filtered.filter(block => 
-      block.name.toLowerCase().includes(lowerCategory) ||
-      block.dependencies!.some(dep => dep.toLowerCase().includes(lowerCategory))
-    );
-  }
-  
-  return filtered;
+    let filtered = [...blocks];
+    
+    if (query) {
+        const lowerQuery = query.toLowerCase();
+        filtered = filtered.filter(block => 
+            block.name.toLowerCase().includes(lowerQuery) ||
+            block.description.toLowerCase().includes(lowerQuery)
+        );
+    }
+    
+    if (category) {
+        const lowerCategory = category.toLowerCase();
+        filtered = filtered.filter(block => 
+            block.name.toLowerCase().includes(lowerCategory) ||
+            block.dependencies!.some(dep => dep.toLowerCase().includes(lowerCategory))
+        );
+    }
+    
+    return filtered;
 }
 
 /**
@@ -592,26 +581,18 @@ function filterBlocks(blocks: Block[], query?: string, category?: string): Block
  * @returns Promise with installation and configuration details
  */
 async function getComponentConfig(componentName: string): Promise<any> {
-  // Try to get from cache first
-  if (componentCache.has(componentName)) {
-    const cachedComponent = componentCache.get(componentName)!;
-    if (cachedComponent.installation) {
-      return {
-        installation: cachedComponent.installation,
-        config: extractConfigFromUsage(cachedComponent.usage || ""),
-        hooks: extractHooksFromUsage(cachedComponent.usage || "")
-      };
-    }
-  }
+    const cacheKey = `${CACHE_KEYS.COMPONENT}config:${componentName}`;
   
-  // If not in cache, fetch full component details
-  const componentInfo = await getComponentDetails(componentName);
-  
-  return {
-    installation: componentInfo.installation || "No installation instructions available.",
-    config: extractConfigFromUsage(componentInfo.usage || ""),
-    hooks: extractHooksFromUsage(componentInfo.usage || "")
-  };
+    return cache.getOrFetch(cacheKey, async () => {
+        // Fetch full component details
+        const componentInfo = await getComponentDetails(componentName);
+        
+        return {
+            installation: componentInfo.installation || "No installation instructions available.",
+            config: extractConfigFromUsage(componentInfo.usage || ""),
+            hooks: extractHooksFromUsage(componentInfo.usage || "")
+        };
+    });
 }
 
 /**
@@ -620,15 +601,15 @@ async function getComponentConfig(componentName: string): Promise<any> {
  * @returns Configuration code
  */
 function extractConfigFromUsage(usage: string): string {
-  // Look for configuration code in usage instructions
-  const configRegex = /```(?:js|jsx|ts|tsx)[\s\S]*?(const\s+config[\s\S]*?)```/;
-  const match = usage.match(configRegex);
-  
-  if (match && match[1]) {
-    return match[1].trim();
-  }
-  
-  return "No configuration code found in usage instructions.";
+    // Look for configuration code in usage instructions
+    const configRegex = /```(?:js|jsx|ts|tsx)[\s\S]*?(const\s+config[\s\S]*?)```/;
+    const match = usage.match(configRegex);
+    
+    if (match && match[1]) {
+        return match[1].trim();
+    }
+    
+    return "No configuration code found in usage instructions.";
 }
 
 /**
@@ -637,17 +618,17 @@ function extractConfigFromUsage(usage: string): string {
  * @returns Hooks code
  */
 function extractHooksFromUsage(usage: string): string[] {
-  const hooks: string[] = [];
-  
-  // Look for hooks in usage instructions
-  const hooksRegex = /use[A-Z][a-zA-Z]*/g;
-  let match;
-  
-  while ((match = hooksRegex.exec(usage)) !== null) {
-    hooks.push(match[0]);
-  }
-  
-  return [...new Set(hooks)]; // Remove duplicates
+    const hooks: string[] = [];
+    
+    // Look for hooks in usage instructions
+    const hooksRegex = /use[A-Z][a-zA-Z]*/g;
+    let match;
+    
+    while ((match = hooksRegex.exec(usage)) !== null) {
+        hooks.push(match[0]);
+    }
+    
+    return [...new Set(hooks)]; // Remove duplicates
 }
 
 /**
@@ -656,31 +637,50 @@ function extractHooksFromUsage(usage: string): string[] {
  * @returns Promise with documentation content
  */
 async function getDocs(topic: string): Promise<string> {
-  try {
-    const formattedTopic = topic.toLowerCase().replace(/\s+/g, '-');
-    let response;
-    
-    try {
-      // Try to fetch from component docs first
-      response = await axios.shadcn.get(`/components/${formattedTopic}`);
-    } catch (error) {
-      // If not found, try general docs
-      response = await axios.shadcn.get(`/${formattedTopic}`);
+    const cacheKey = `${CACHE_KEYS.DOCS}${topic}`;
+  
+    return cache.getOrFetch(cacheKey, async () => {
+        try {
+            const formattedTopic = topic.toLowerCase().replace(/\s+/g, '-');
+            let response;
+            
+            try {
+                // Try to fetch from component docs first
+                response = await axios.shadcn.get(`/components/${formattedTopic}`);
+            } catch (error) {
+                // If not found, try general docs
+                response = await axios.shadcn.get(`/${formattedTopic}`);
+            }
+            
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data);
+                
+                // Get the main content section
+                const content = $('.mdx').text();
+                return content || "No documentation content found.";
+            }
+            
+            return "Documentation not found.";
+        } catch (error) {
+            console.error(`Error fetching documentation for ${topic}:`, error);
+            return "Error fetching documentation.";
+        }
+    });
+}
+
+// Function to invalidate specific cache entries
+function invalidateCache(type: string, key?: string): void {
+    if (key) {
+        const cacheKey = `${type}${key}`;
+        cache.delete(cacheKey);
+    } else {
+        cache.deleteByPrefix(type);
     }
-    
-    if (response.status === 200) {
-      const $ = cheerio.load(response.data);
-      
-      // Get the main content section
-      const content = $('.mdx').text();
-      return content || "No documentation content found.";
-    }
-    
-    return "Documentation not found.";
-  } catch (error) {
-    console.error(`Error fetching documentation for ${topic}:`, error);
-    return "Error fetching documentation.";
-  }
+}
+
+// Function to clear all cache
+function clearCache(): void {
+    cache.clear();
 }
 
 export {
@@ -694,6 +694,8 @@ export {
     getBlocks,
     getBlockDetails,
     getComponentConfig,
-    getDocs
+    getDocs,
+    invalidateCache,
+    clearCache
 };
 
