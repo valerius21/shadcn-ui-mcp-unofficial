@@ -9,7 +9,7 @@ echo "Building the project..."
 npm run build
 
 # Start the server
-echo "Starting the server..."
+echo "Starting the server (STDIO)..."
 npm run start
 
 echo "Server startup complete!"
