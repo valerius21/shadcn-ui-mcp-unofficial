@@ -5,6 +5,7 @@ A TypeScript implementation of a Model Context Protocol (MCP) server that helps 
 ## Project Overview
 
 This MCP server provides tools and resources to help AI assistants:
+
 - Get shadcn/ui component source code
 - Get component demo code and usage examples
 - Generate installation instructions for shadcn/ui components
@@ -59,10 +60,37 @@ shadcn-ui-mcp-unofficial/
 
 ### Prerequisites
 
-- Node.js (v18 or later recommended)
-- npm
+- Node.js (v18 or later recommended) and npm
+- OR Docker
 
-### Installation
+### Using Docker (Recommended)
+
+The easiest way to run the server is using Docker:
+
+```bash
+# Build and run using docker-compose (recommended)
+docker-compose up --build
+
+# Or using Docker directly
+docker build -t shadcn-mcp .
+docker run -p 6728:6728 --name shadcn-mcp shadcn-mcp
+```
+
+The server will be available at `http://localhost:6728`.
+
+#### Docker Configuration
+
+The Docker setup includes:
+
+- Multi-stage build for smaller image size
+- Production-only dependencies in final image
+- Health checks for container monitoring
+- Automatic restart on failure
+- Port 6728 exposed for access
+
+### Manual Installation
+
+If you prefer to run without Docker:
 
 ```bash
 npm install
@@ -70,13 +98,13 @@ npm install
 
 ### Running the Server
 
-Use the startup script to clean, build, and start the server:
+Using the startup script:
 
 ```bash
 bash startup.sh
 ```
 
-Or run the individual commands:
+Or individual commands:
 
 ```bash
 npm run clean
@@ -134,12 +162,12 @@ Provides framework-specific installation guides for shadcn/ui.
   - `framework` (string): The framework to use (next, vite, remix, etc.)
   - `packageManager` (string): The package manager to use (npm, pnpm, yarn, bun)
 
-
 ## Implementation Details
 
 ### GitHub Integration
 
 The server fetches component information directly from the shadcn/ui GitHub repository, specifically from:
+
 - The main shadcn-ui/ui repository
 - The v4 application which contains the latest components
 
@@ -148,6 +176,7 @@ The server attempts multiple paths when looking for components, as some componen
 ### Error Handling
 
 The server implements robust error handling to handle cases where:
+
 - Components don't exist or have been renamed
 - Network requests to GitHub fail
 - Invalid parameters are provided
@@ -155,6 +184,7 @@ The server implements robust error handling to handle cases where:
 ### Extensibility
 
 The server is designed to be easily extensible:
+
 - Add new tools by updating the `tools.ts` file
 - Add new resources by updating the `resources.ts` file
 - Add new resource templates by updating the `resource-templates.ts` file
@@ -188,7 +218,7 @@ The shadcn/ui MCP server can be integrated with VS Code's Agent Mode to provide 
     "servers": {
         "shadcnui": {
             "type": "sse",
-            "url": "http://localhost:3001/sse"
+            "url": "http://localhost:6728/sse"
         }
     }
 }
@@ -199,6 +229,7 @@ The shadcn/ui MCP server can be integrated with VS Code's Agent Mode to provide 
 Below are examples of using the shadcn/ui MCP server with VS Code's Agent Mode:
 
 1. **Listing Available Tools**
+
    - The MCP server shows the available tools, such as `get_component` and `get_component_demo`.
    - ![Example: Listing Available Tools](./docs/images/server-configured.png)
 
@@ -233,7 +264,7 @@ Message endpoint available at http://localhost:3001/messages
 You can test if your SSE endpoint is working correctly using curl:
 
 ```bash
-curl -N http://localhost:3001/sse
+curl -N http://localhost:6728/sse
 ```
 
 This should start streaming events from the server, indicating that the SSE endpoint is working properly.
@@ -246,8 +277,27 @@ This should start streaming events from the server, indicating that the SSE endp
 2. **Component Not Found**: Check that the component name is correct and exists in the shadcn/ui library.
 3. **VS Code Not Connecting**: Verify the settings.json configuration has the correct URL.
 
-### Debugging Tips
+### Docker Commands
 
-- Use the MCP Inspector at `http://127.0.0.1:6274` when running with `npm run start` to debug request/response flows.
-- Check the console output for error messages.
-- Ensure you have network connectivity to access the shadcn/ui GitHub repository.
+Useful Docker commands for troubleshooting:
+
+```bash
+# View container logs
+docker logs shadcn-mcp
+
+# Stop the container
+docker stop shadcn-mcp
+
+# Remove the container
+docker rm shadcn-mcp
+
+# Remove the image and rebuild
+docker rmi shadcn-mcp
+docker-compose up --build
+
+# Check container health
+docker inspect shadcn-mcp
+
+# Enter the container shell
+docker exec -it shadcn-mcp /bin/bash
+```

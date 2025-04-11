@@ -1,12 +1,18 @@
 #!/bin/bash
 
-# Clean the project
-echo "Cleaning the project..."
-npm run clean
+# Check if build directory exists
+if [ ! -d "build" ]; then
+    echo "Error: build directory not found!"
+    echo "Please ensure the TypeScript compilation was successful."
+    exit 1
+fi
 
-# Build the project
-echo "Building the project..."
-npm run build
+# Check if build/index.js exists
+if [ ! -f "build/index.js" ]; then
+    echo "Error: build/index.js not found!"
+    echo "Please ensure the TypeScript compilation was successful."
+    exit 1
+fi
 
 # Start the server
 echo "Starting the server (STDIO)..."
